@@ -1,0 +1,21 @@
+{
+  "name": "appium-adb-bridge",
+  "version": "1.0.0",
+  "description": "Appium Adb plug and play bridge for seleniod cluster",
+  "main": "index.js",
+  "scripts": {
+    "run": "node index.js"
+  },
+  "author": "Conrad Kirschner",
+  "license": "ISC",
+  "dependencies": {
+    "adbkit": "^2.11.1",
+    "axios": "^0.19.2",
+    "bluebird": "^3.7.2",
+    "express": "^4.17.1",
+    "http-proxy": "^1.18.0",
+    "js-yaml": "^3.13.1",
+    "node-http-proxy": "^0.2.3",
+    "request": "^2.88.0"
+  }
+}

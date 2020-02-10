@@ -1,0 +1,9 @@
+{
+  "total": 2,
+  "used": 0,
+  "queued": 0,
+  "pending": 0,
+  "browsers1": {
+    "Test": "test"
+  }
+}
