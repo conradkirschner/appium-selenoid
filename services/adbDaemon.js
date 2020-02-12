@@ -18,6 +18,10 @@ setTimeout(()=> {
     },2000)
 }, 2000)
 
+function getDevices(){
+    console.log('DEBV:',JSON.stringify(devices));
+    return devices;
+}
 
 function addDevice(device) {
     getRandomPort((port) => {
@@ -39,6 +43,7 @@ function removeDevice(device) {
 
     }
 }
+
 function trackDevices() {
     if (client === null) {
         setTimeout(trackDevices,4000);
@@ -68,12 +73,6 @@ function trackDevices() {
             console.error('Something went wrong:', err.stack)
         })
 }
-function getDevices(){
-    console.log('DEBV:',JSON.stringify(devices));
-    return devices;
-}
-exports.run = trackDevices;
-exports.getDevices = getDevices;
 
 function startup() {
 // startup ADB here (windows specific)
@@ -120,3 +119,7 @@ function getRandomPort(returnFunction) {
             return returnFunction(port);
     })
 }
+
+
+exports.run = trackDevices;
+exports.getDevices = getDevices;

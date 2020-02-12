@@ -4,7 +4,7 @@ const axios = require('axios');
 
 const options = {
     method: 'get',
-    url: 'http://localhost:4723/wd/hub/status',
+    url: 'http://localhost:$PORT$/wd/hub/status',
     transformResponse: [(data) => {
         // transform the response
         console.log(JSON.parse(data));
@@ -15,8 +15,9 @@ const options = {
 
 let isRequesting = false;
 
-function getStatuts() {
-    if (isRequesting) return;
+function getStatuts(device) {
+    console.log('Status of device', device);
+    options.url = options.url.replace('$PORT$', device.port);
     isRequesting = true;
     console.log('start Request');
     let result = null;
@@ -30,16 +31,17 @@ function getStatuts() {
         };
         console.log('final: ', result);
         return result;
-    }).catch(()=>{
+    }).catch((e)=>{
         isRequesting = false;
+        console.error(e);
+        return false;
     });
 }
 
-async function resolveSettings(name) {
+async function resolveSettings(device) {
 
 // Get document, or throw exception on error
-
-const result = await getStatuts().then(({sessionId, status})=>{
+return await getStatuts(device).then(({sessionId, status})=>{
     console.log({sessionId, status});
     let session = null;
     if (sessionId === null ) {
@@ -54,26 +56,24 @@ const result = await getStatuts().then(({sessionId, status})=>{
     }
     try {
         const fs = require("fs"); // Or `import fs from "fs";` with ESM
-        if (!fs.existsSync('config/'+name+'.yaml')) {
-            throw new Error('Unknown Device - Config File not found for name: ' + name);
+        if (!fs.existsSync('config/'+device.name+'.yaml')) {
+            throw new Error('Unknown Device - Config File not found for name: ' + device.name);
             // Do something
         }
-        var doc = yaml.safeLoad(fs.readFileSync('config/'+name+'.yaml', 'utf8'));
-        console.log(doc);
-        const obj = {};
-        obj[name] = doc[0];
-        const version = Object.keys(obj[name])[0];
-        const user = Object.keys(obj[name][version])[0];
-        obj[name][version][user].sessions = session;
-        console.info('name: ', name);
+        let config = yaml.safeLoad(fs.readFileSync('config/'+device.name+'.yaml', 'utf8'));
+        const convertedObject = {};
+        convertedObject[device.name] = config[0];
+        const version = Object.keys(convertedObject[device.name])[0];
+        const user = Object.keys(convertedObject[device.name][version])[0];
+        convertedObject[device.name][version][user].sessions = session;
+        console.info('name: ', device.name);
         console.info('version: ', version);
         console.info('user: ', user);
-        return obj;
+        return convertedObject;
     } catch (e) {
         console.log(e);
     }
 })
-    return result;
 }
 
 function resolveName(id) {

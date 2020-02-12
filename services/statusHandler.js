@@ -26,7 +26,7 @@ async function buildBrowserObject(devices) {
             continue;
         }
         console.debug('Resolve device to name',devices[key]);
-        resolvedDevice = {...resolvedDevice,...await config.resolveSettings(devices[key].name)}
+        resolvedDevice = {...resolvedDevice,...await config.resolveSettings(devices[key])}
     }
     console.log('test',Object.size(devices));
     return {
