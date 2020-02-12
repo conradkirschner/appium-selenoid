@@ -9,9 +9,7 @@ const axios = require('axios');
  * @type {{"188f0833": string}}
  */
 
-const devices = {
-    '188f0833':'handy'
-};
+const devices = require('./mapping.json');
 
 const options = {
     method: 'get',

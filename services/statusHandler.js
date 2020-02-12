@@ -21,7 +21,12 @@ async function buildBrowserObject(devices) {
 
 
     let resolvedDevice = {};
-    for(var key in devices){
+    for (let key in devices) {
+        if(devices[key] === undefined) {
+            console.warn('Unknown device detected');
+            continue;
+        }
+
         resolvedDevice = {...resolvedDevice,...await config.resolveSettings(devices[key])}
     }
     console.log('test',Object.size(devices));
