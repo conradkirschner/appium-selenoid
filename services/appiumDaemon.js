@@ -1,6 +1,9 @@
 const { exec } = require('child_process');
-const startUp = () => {
-    exec('npx appium', (error, stdout, stderr) => {
+
+const PIDs = [];
+
+const startUp = (port) => {
+    exec('npx appium -p ' + port, (error, stdout, stderr) => {
         if (error) {
             console.log(`error: ${error.message}`);
             return;
@@ -9,6 +12,7 @@ const startUp = () => {
             console.log(`stderr: ${stderr}`);
             return;
         }
+        console.log('Successfully executed startup on port ' + port)
         console.log(`stdout: ${stdout}`);
     });
 }

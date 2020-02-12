@@ -1,6 +1,9 @@
-var adb = require('adbkit')
+const adb = require('adbkit')
 const { exec } = require('child_process');
-var config = require('../config/deviceList')
+const detectPort = require('detect-port');
+
+const appium = require('./appiumDaemon');
+const config = require('../config/deviceList');
 const username = require('os').userInfo().username;
 const devices = [];
 let client = null;
@@ -16,7 +19,26 @@ setTimeout(()=> {
 }, 2000)
 
 
+function addDevice(device) {
+    getRandomPort((port) => {
+        appium.startUp(port);
+        devices.push({ ...device, port});
+        console.log(devices);
+    });
 
+}
+
+function removeDevice(device) {
+    for (let i = 0; i < devices.length; i++) {
+        let knownDevice = devices[i];
+        console.log(knownDevice);
+        if (device.id === knownDevice.id) {
+            devices.splice(i, 1);
+            break;
+        }
+
+    }
+}
 function trackDevices() {
     if (client === null) {
         setTimeout(trackDevices,4000);
@@ -26,25 +48,16 @@ function trackDevices() {
         .then(function(tracker) {
             tracker.on('add', function(device) {
                 console.log('Device %s was plugged in', device)
-                let newDevice = config.resolveName(device.id);
-                devices.push(
-                        {
-                            name: newDevice,
-                            id: device.id
-                        }
-                    );
+                let name = config.resolveName(device.id);
+                addDevice(
+                    {
+                        name,
+                        id: device.id
+                    });
             })
-            tracker.on('remove', function(newDevice) {
-                for (var i = 0; i < devices.length; i++) {
-                    var knownDevice = devices[i];
-                    console.log(knownDevice);
-                        if (newDevice.id === knownDevice.id) {
-                            devices.splice(i, 1);
-                            break;
-                        }
-
-                }
-                console.log('Device %s was unplugged', newDevice)
+            tracker.on('remove', function(device) {
+                removeDevice(device);
+                console.log('Device %s was unplugged', device)
                 console.log(devices)
             })
             tracker.on('end', function() {
@@ -90,4 +103,20 @@ function shutdown() {
         }
         console.log(`stdout: ${stdout}`);
     });
+}
+
+
+/**
+ * Find free Port
+ **/
+function getRandomPort(returnFunction) {
+    const random = Math.floor(9000 + Math.random() * (65535 - 9000));
+    return detectPort(random, (err, port) => {
+            if (err) {
+                console.log(`get available port failed with ${err}`);
+                getRandomPort();
+                return ;
+            }
+            return returnFunction(port);
+    })
 }
