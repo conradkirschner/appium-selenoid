@@ -27,19 +27,24 @@ function trackDevices() {
             tracker.on('add', function(device) {
                 console.log('Device %s was plugged in', device)
                 let newDevice = config.resolveName(device.id);
-                devices.push(newDevice);
+                devices.push(
+                        {
+                            name: newDevice,
+                            id: device.id
+                        }
+                    );
             })
-            tracker.on('remove', function(device) {
+            tracker.on('remove', function(newDevice) {
                 for (var i = 0; i < devices.length; i++) {
-                    var obj = devices[i];
-                    console.log(obj);
-                        if (config.resolveName(device.id) === obj) {
+                    var knownDevice = devices[i];
+                    console.log(knownDevice);
+                        if (newDevice.id === knownDevice.id) {
                             devices.splice(i, 1);
                             break;
                         }
 
                 }
-                console.log('Device %s was unplugged', device)
+                console.log('Device %s was unplugged', newDevice)
                 console.log(devices)
             })
             tracker.on('end', function() {

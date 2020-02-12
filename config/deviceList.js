@@ -2,15 +2,6 @@ const yaml = require('js-yaml');
 const fs   = require('fs');
 const axios = require('axios');
 
-/**
- * Add here your devices and give them a name 
- * for settings use name.yml
- * 
- * @type {{"188f0833": string}}
- */
-
-const devices = require('./mapping.json');
-
 const options = {
     method: 'get',
     url: 'http://localhost:4723/wd/hub/status',
@@ -62,6 +53,11 @@ const result = await getStatuts().then(({sessionId, status})=>{
         }]
     }
     try {
+        const fs = require("fs"); // Or `import fs from "fs";` with ESM
+        if (!fs.existsSync('config/'+name+'.yaml')) {
+            throw new Error('Unknown Device - Config File not found for name: ' + name);
+            // Do something
+        }
         var doc = yaml.safeLoad(fs.readFileSync('config/'+name+'.yaml', 'utf8'));
         console.log(doc);
         const obj = {};
@@ -81,7 +77,8 @@ const result = await getStatuts().then(({sessionId, status})=>{
 }
 
 function resolveName(id) {
-    return devices[id];
+    console.log('YAML CONFIG: \n', yaml.safeLoad(fs.readFileSync('config/mapping.yaml', 'utf8')))
+    return yaml.safeLoad(fs.readFileSync('config/mapping.yaml', 'utf8'))[id];
 }
 
 exports.resolveName = resolveName;

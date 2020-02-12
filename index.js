@@ -3,9 +3,9 @@
  *   MAIN STARTS THE APP
  *
  **/
-const startUpAppium = require('./services/appiumDeamon');
-var proxy = require('./services/proxyDeamon'),
-    adbClient = require('./services/adbDeamon');
+const startUpAppium = require('./services/appiumDaemon');
+var proxy = require('./services/proxyDaemon'),
+    adbClient = require('./services/adbDaemon');
 
 
     startUpAppium.startUp();
