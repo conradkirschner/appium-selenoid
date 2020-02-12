@@ -1,4 +1,4 @@
-const adbDeamon = require('./adbDeamon');
+const adbDeamon = require('./adbDaemon');
 const config = require('../config/deviceList');
 
 function getDevices(){
@@ -7,8 +7,7 @@ function getDevices(){
 
 async function getStatus() {
     console.log(getDevices());
-    const devices = getDevices();
-    return await buildBrowserObject(devices)
+    return await buildBrowserObject(getDevices())
 }
 async function buildBrowserObject(devices) {
     Object.size = function(obj) {
@@ -26,8 +25,8 @@ async function buildBrowserObject(devices) {
             console.warn('Unknown device detected');
             continue;
         }
-
-        resolvedDevice = {...resolvedDevice,...await config.resolveSettings(devices[key])}
+        console.debug('Resolve device to name',devices[key]);
+        resolvedDevice = {...resolvedDevice,...await config.resolveSettings(devices[key].name)}
     }
     console.log('test',Object.size(devices));
     return {
