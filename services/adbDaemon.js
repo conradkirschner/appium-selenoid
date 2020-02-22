@@ -18,9 +18,15 @@ setTimeout(()=> {
     },2000)
 }, 2000)
 
-function getDevices(){
-    console.log('DEBV:',JSON.stringify(devices));
-    return devices;
+function getDevices(uuid) {
+    if (uuid === undefined) return devices;
+    for (let i = 0; i < devices.length; i++) {
+        if (devices[i].name ===uuid) {
+            console.info('Device found, connecting now', devices[i])
+            return devices[i];
+        }
+    }
+    return undefined;
 }
 
 function addDevice(device) {
@@ -57,7 +63,8 @@ function trackDevices() {
                 addDevice(
                     {
                         name,
-                        id: device.id
+                        id: device.id,
+                        isUsed: false
                     });
             })
             tracker.on('remove', function(device) {

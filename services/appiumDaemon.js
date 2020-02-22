@@ -3,7 +3,7 @@ const { exec } = require('child_process');
 const PIDs = [];
 
 const startUp = (port) => {
-    exec('npx appium -p ' + port, (error, stdout, stderr) => {
+    exec(`npx appium -p  ${port} --nodeconfig ../appium/template.json`, (error, stdout, stderr) => {
         if (error) {
             console.log(`error: ${error.message}`);
             return;

@@ -9,22 +9,47 @@ async function runProxy(proxyHostname, port) {
     //
     // Create a proxy server to create status api
     //
+    let device = undefined;
     const proxy = httpProxy.createProxyServer({});
     const server = http.createServer(async function(req, res) {
         // and then proxy the request.
         const devices = adbDaemon.getDevices();
         console.log('Redirecting to Appium Server');
         console.log('Got Request');
-        const result = {...response, ...await status.getStatus()}
-        if (req.url === '/status') {
-            console.warn(result);
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.write(JSON.stringify(result,true, 100));
-            res.end();
-            return;
+        const result = {...response, ...await status.getStatus()};
+        console.info('url:: ',req.url);
+        switch (req.url) {
+            case '/status':
+                console.warn(result);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.write(JSON.stringify(result,true, 100));
+                res.end();
+                return;
+            case '/wd/hub/session':
+                break;
         }
-        sendResponse(proxy, req, res, proxyHostname);
+        //sendResponse(proxy, req, res, proxyHostname);
+        proxy.on('proxyRes', function(proxyRes, req, res){
 
+            proxyRes.on('data' , function(dataBuffer) {
+                try {
+
+                    const response = dataBuffer.toString();
+                    const sessionId = JSON.parse(response).sessionId;
+                    if (device === undefined || sessionId === undefined || sessionId === null) return;
+                    console.info(`added session id (${sessionId}) to device ${device.name}`);
+                    device.sessionId = sessionId;
+                } catch (e) {
+
+                }
+                try {
+
+                } catch (e) {
+                    console.info('response data:', dataBuffer.toString());
+                    res.data = dataBuffer.toString().replace('"uuid":"' + device.name + '"', '"uuid":"' + device.id + '"');
+                }
+            });
+        });
         let body = [];
         req.on('data', (chunk) => {
             body.push(chunk);
@@ -35,24 +60,56 @@ async function runProxy(proxyHostname, port) {
             body = Buffer.concat(body).toString();
             try {
                 body =  JSON.parse(body);
-                console.log('body data ', body);
-
-                // route to device
-                if (body.desiredCapabilities.uuid) {
-                    for (let i = 0; i < devices.length; i+=1 ) {
-                        console.log('uuid found');
+                console.info('body data ', body);
+                console.info(req.url.indexOf('/wd/hub/session'));
+                if(req.url.indexOf('/wd/hub/session') !== -1) {
+                    const uuid = body.desiredCapabilities.uuid;
+                    console.info('body.desiredCapabilities', uuid)
+                    if (uuid === undefined ) {
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.write(
+                            '{"status":13,"value":{"message":"You must include a uuid capability"},"sessionId":null}'
+                        );
+                        res.end();
+                        console.info('error appeared no uuid')
+                        return;
                     }
+                    device =adbDaemon.getDevices(uuid);
+                    console.info('device found: ', device);
+                    if (device === undefined) {
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.write(
+                            '{"status":13,"value":{"message":"uuid is not known."},"sessionId":null}'
+                        );
+                        res.end();
+                        console.info('error appeared no uuid')
+                        return;
+                    }
+                    console.info('Set device to ' + proxyHostname, device.port);
+                    sendResponse(proxy, req, res,  proxyHostname, device)
+
                 }
-                console.log('Set device to ' + proxyHostname + devices[0].port);
-              //  sendResponse(proxy, req, res,  proxyHostname)
-                return;
+                if (body.desiredCapabilities.uuid && device) {
+                    const header = req.headers;
+                    const method = req.method;
+
+                    console.log('Converted UUID', req.headers, req.eventNames(), req.method)
+                    body.desiredCapabilities.uuid = device.id;
+                    req.eventNames();
+                }
+
             } catch (e) {
                 console.log("not JSON");
             }
-            sendResponse(proxy, req, res,  proxyHostname)
-
         });
-
+        const sessionId = getSessionId(req.url);
+        for(let i = 0; i < devices.length; i++) {
+            if (devices[i].sessionId === sessionId) {
+                sendResponse(proxy, req, res,  proxyHostname, devices[i]);
+                return;
+            }
+        }
+        console.info('No device with that session found!')
 
     });
 
@@ -60,17 +117,18 @@ async function runProxy(proxyHostname, port) {
     server.listen(port);
 }
 
-function sendResponse(proxy, req, res, proxyHostname) {
-    // and then proxy the request.
-    const devices = adbDaemon.getDevices();
+function sendResponse(proxy, req, res, proxyHostname, device) {
     console.log('Redirecting to Appium Server');
+    console.log('###################################################');
+    console.log(`proxy to device ${device.name} with port ${device.port} with session ${device.sessionId}`);
+    console.log('###################################################');
+    console.log('request', req.body);
 
-    for (let i = 0; i < devices.length; i+=1 ) {
-        console.log('Set device to ' + devices[0]);
-        console.log('###################################################');
-        console.log('proxy to device ' + devices[0].name);
-        console.log('###################################################');
-        proxy.web(req, res, { target: proxyHostname + ':' +  devices[0].port });
-    }
+    proxy.web(req, res, { target: proxyHostname + ':' +  device.port});
+}
+function getSessionId(url) {
+    console.info(url.split('/')[4]);
+    return url.split('/')[4];
+
 }
 exports.run = runProxy;

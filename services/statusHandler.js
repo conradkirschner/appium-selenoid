@@ -20,6 +20,7 @@ async function buildBrowserObject(devices) {
 
 
     let resolvedDevice = {};
+    let isUsed = 0;
     for (let key in devices) {
         if(devices[key] === undefined) {
             console.warn('Unknown device detected');
@@ -27,10 +28,14 @@ async function buildBrowserObject(devices) {
         }
         console.debug('Resolve device to name',devices[key]);
         resolvedDevice = {...resolvedDevice,...await config.resolveSettings(devices[key])}
+        if (devices[key].isUsed) {
+            isUsed++;
+        }
     }
     console.log('test',Object.size(devices));
     return {
         total: Object.size(devices),
+        used: isUsed,
         browsers: {
             "android":
     {...resolvedDevice, ...{"XIAOMI MI 9": {
