@@ -28,6 +28,7 @@ async function runProxy(proxyHostname, port) {
             case '/wd/hub/session':
                 break;
         }
+
         //sendResponse(proxy, req, res, proxyHostname);
         proxy.on('proxyRes', function(proxyRes, req, res){
 
@@ -46,7 +47,7 @@ async function runProxy(proxyHostname, port) {
 
                 } catch (e) {
                     console.info('response data:', dataBuffer.toString());
-                    res.data = dataBuffer.toString().replace('"uuid":"' + device.name + '"', '"uuid":"' + device.id + '"');
+                   // res.data = dataBuffer.toString().replace('"udid":"' + device.name + '"', '"udid":"' + device.id + '"');
                 }
             });
         });
@@ -63,44 +64,43 @@ async function runProxy(proxyHostname, port) {
                 console.info('body data ', body);
                 console.info(req.url.indexOf('/wd/hub/session'));
                 if(req.url.indexOf('/wd/hub/session') !== -1) {
-                    const uuid = body.desiredCapabilities.uuid;
-                    console.info('body.desiredCapabilities', uuid)
-                    if (uuid === undefined ) {
+                    const udid = body.desiredCapabilities.udid;
+                    console.info('body.desiredCapabilities', udid);
+                    if (udid === undefined ) {
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.write(
-                            '{"status":13,"value":{"message":"You must include a uuid capability"},"sessionId":null}'
+                            '{"status":13,"value":{"message":"You must include a udid capability"},"sessionId":null}'
                         );
                         res.end();
-                        console.info('error appeared no uuid')
+                        console.info('error appeared no udid')
                         return;
                     }
-                    device =adbDaemon.getDevices(uuid);
+                    device =adbDaemon.getDevices(udid);
                     console.info('device found: ', device);
                     if (device === undefined) {
                         res.writeHead(200, { 'Content-Type': 'application/json' });
                         res.write(
-                            '{"status":13,"value":{"message":"uuid is not known."},"sessionId":null}'
+                            '{"status":13,"value":{"message":"udid is not known."},"sessionId":null}'
                         );
                         res.end();
-                        console.info('error appeared no uuid')
+                        console.info('error appeared no udid');
                         return;
                     }
                     console.info('Set device to ' + proxyHostname, device.port);
                     sendResponse(proxy, req, res,  proxyHostname, device)
 
                 }
-                if (body.desiredCapabilities.uuid && device) {
-                    const header = req.headers;
-                    const method = req.method;
-
-                    console.log('Converted UUID', req.headers, req.eventNames(), req.method)
-                    body.desiredCapabilities.uuid = device.id;
+                if (body.desiredCapabilities.udid && device) {
+                    console.log('Converted udid', req.headers, req.eventNames(), req.method);
+                    body.desiredCapabilities.udid = device.id;
                     req.eventNames();
                 }
 
             } catch (e) {
                 console.log("not JSON");
             }
+           return;
+
         });
         const sessionId = getSessionId(req.url);
         for(let i = 0; i < devices.length; i++) {
@@ -109,11 +109,11 @@ async function runProxy(proxyHostname, port) {
                 return;
             }
         }
-        console.info('No device with that session found!')
+        console.info('No device with that session found!', sessionId)
 
     });
 
-    console.log(`listening on port ${port}`)
+    console.log(`listening on port ${port}`);
     server.listen(port);
 }
 
